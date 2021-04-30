@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+tensorflow = "==1.14"
+cython = "*"
+numpy = "*"
+pandas = "*"
+tqdm = "*"
+matplotlib = "*"
+scikit-learn = "*"
+opencv-python = "*"
+python-mnist = "*"
+darkflow = {path = "./darkflow"}
+h5py = "==2.10.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
