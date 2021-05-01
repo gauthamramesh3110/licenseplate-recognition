@@ -1,8 +1,8 @@
 import os
 import sys
 import cv2
-import filters
-import utilities
+from . import filters
+from . import utilities
 from tqdm import tqdm
 
 
@@ -22,13 +22,13 @@ def process_images(license_plate_images, show_index=-1):
 
         image_title = "img_" + str(index) + ".jpg"
         bboxes = utilities.get_bboxes(image, original.copy(), threshold_w=2.5, threshold_h=0.25, show=show, save=False, title=image_title)
+        segments = utilities.get_segments(image, bboxes)
 
-        license_plate_predictions.append((original.copy(), bboxes))
         if show:
             if cv2.waitKey(0) & 0xFF == 27:
                 cv2.destroyAllWindows()
 
-    return license_plate_predictions
+    return segments
 
 
 def find_accuracy(license_plate_predictions, license_plate_numbers, image_folder_path, show=False, save=False):

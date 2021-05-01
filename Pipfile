@@ -4,8 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-tensorflow = "==1.14"
+h5py = "==2.10.0"
 cython = "*"
+tensorflow = "==1.14"
 numpy = "*"
 pandas = "*"
 tqdm = "*"
@@ -14,7 +15,6 @@ scikit-learn = "*"
 opencv-python = "*"
 python-mnist = "*"
 darkflow = {path = "./darkflow"}
-h5py = "==2.10.0"
 
 [dev-packages]
 

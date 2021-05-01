@@ -53,6 +53,7 @@ def get_bboxes(image, original, threshold_h=0.15, threshold_w=0.15, step_size=1,
         draw_bboxes(original.copy(), bboxes, "unfiltered")
 
     bboxes = filter_bboxes(bboxes, min_height, max_height, min_width, max_width, threshold_h, threshold_w, step_size, show=False)
+    sorted(bboxes, key=lambda x:x[0])
 
     if show or save:
         draw_bboxes(original.copy(), bboxes, title, save=save)
@@ -111,6 +112,13 @@ def filter_bboxes(bboxes, min_height, max_height, min_width, max_width, threshol
 
     return filtered_bboxes
 
+def get_segments(image, bboxes):
+    segments = []
+
+    for [x, y, w, h] in bboxes:
+        segments.append(image[y:y+h, x:x+w])
+    
+    return segments
 
 def draw_bboxes(image, bboxes, title="bbox", save=False):
     for (x, y, w, h) in bboxes:
