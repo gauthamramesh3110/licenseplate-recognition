@@ -184,9 +184,9 @@ def process_characters(characters):
         character = add_border(character, 3, (0, 0, 0))
         processed_characters.append(character)
 
-        cv2.imshow("character", character)
-        if cv2.waitKey(0) & 0xFF == 27:
-            cv2.destroyAllWindows()
+        # cv2.imshow("character", character)
+        # if cv2.waitKey(0) & 0xFF == 27:
+        #     cv2.destroyAllWindows()
 
     processed_characters = np.array(processed_characters).reshape(-1, 28, 28, 1) / 255.0
     return processed_characters
@@ -270,6 +270,7 @@ def decode_predictions(preds):
     for pred in preds[6:]:
         whitelist = pred.copy()
         whitelist[10:] = [0] * 26
+        whitelist[7] = 0
         index = np.argmax(whitelist)
         decoded_preds = decoded_preds + characters[index]
 
@@ -318,7 +319,7 @@ def classify_characters(characters):
     ]
 
     character_whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    number_whitelist = "0123456789"
+    number_whitelist = "012345689"
     first_whitelist = ""
     second_whitelist = ""
 

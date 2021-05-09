@@ -1,8 +1,9 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-from sqlalchemy.orm import defaultload
+from licenseplate_recognition import recognize
+import cv2
+import numpy as np
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
@@ -153,6 +154,18 @@ def get_pending_approval():
         "location": pending_approval.location,
         "payment_amount": pending_approval.payment_amount,
     }
+
+
+@app.route("/scan_image", methods=["POST"])
+def scan_image():
+    image_file = request.files["image_file"].read()
+    npimg = np.fromstring(image_file, np.uint8)
+    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+    image = np.array(image)
+
+    result = recognize([image])
+
+    return {"licenseplate_number": result}
 
 
 @app.route("/approve", methods=["POST"])

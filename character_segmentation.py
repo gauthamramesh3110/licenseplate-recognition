@@ -1,8 +1,7 @@
 import os
 import sys
 import cv2
-from helpers import filters
-from helpers import utilities
+from helpers import filters, utilities
 from tqdm import tqdm
 
 
