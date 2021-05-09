@@ -1,0 +1,13 @@
+{
+  "git.ignoreLimitWarning": true,
+  "python.formatting.provider": "black",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/licenseplate_recognition",
+    "${workspaceFolder}/licenseplate_recognition/helpers",
+    "${workspaceFolder}"
+  ],
+  "python.formatting.blackArgs": [
+    "--line-length",
+    "150"
+  ],
+}

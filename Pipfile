@@ -16,6 +16,8 @@ opencv-python = "*"
 python-mnist = "*"
 darkflow = {path = "./darkflow"}
 pytesseract = "*"
+flask = "*"
+flask-sqlalchemy = "*"
 
 [dev-packages]
 black = "*"
