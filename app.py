@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, url_for, redirect, make_response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from google.protobuf import message
 
 from sqlalchemy.orm import defaultload
 from licenseplate_recognition import recognize
@@ -48,10 +49,14 @@ def home():
     return render_template("home.html")
 
 
-@app.route("/addentry", methods=["POST"])
-def add_entry():
+@app.route("/admin")
+def admin():
+    return render_template("admin.html", message="")
 
-    new_entry = Entries(licenseplate_number=request.json["licenseplate_number"], location=request.json["location"])
+
+def add_entry(licenseplate_number, location):
+
+    new_entry = Entries(licenseplate_number=licenseplate_number, location=location)
 
     try:
         db.session.add(new_entry)
@@ -62,10 +67,9 @@ def add_entry():
         return {"status": "failure", "message": "Error adding new entry"}
 
 
-@app.route("/addexit", methods=["POST"])
-def add_exit():
+def add_exit(licenseplate_number, amount_per_hour):
 
-    existing_entry = Entries.query.filter_by(licenseplate_number=request.json["licenseplate_number"], exit_time=None).first()
+    existing_entry = Entries.query.filter_by(licenseplate_number=licenseplate_number, exit_time=None).first()
 
     if existing_entry == None:
         return {"status": "failure", "message": "No open entry found"}
@@ -73,7 +77,7 @@ def add_exit():
     existing_entry.exit_time = datetime.now()
     parking_time = existing_entry.exit_time - existing_entry.entry_time
     parking_time = parking_time.total_seconds() // 3600
-    existing_entry.payment_amount = parking_time * int(request.json["amount_per_hour"])
+    existing_entry.payment_amount = parking_time * int(amount_per_hour)
     existing_entry.exited = True
 
     try:
@@ -81,6 +85,27 @@ def add_exit():
         return {"status": "success", "message": "Added Exit and Updated Amount"}
     except:
         return {"status": "failure", "message": "Unable to add exit"}
+
+
+@app.route("/scan_image", methods=["POST"])
+def scan_image():
+    print(request.form["type"], request.form["location"])
+    image_file = request.files["image_file"].read()
+    npimg = np.fromstring(image_file, np.uint8)
+    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+    image = np.array(image)
+
+    result = recognize([image])
+
+    if request.form["type"] == "entry":
+        add_entry(result, request.form["location"])
+    else:
+        add_exit(result, request.form["amount_per_hour"])
+
+    response = redirect("/admin")
+    response.set_cookie("message", "success")
+
+    return response
 
 
 @app.route("/registeruser", methods=["POST"])
@@ -179,18 +204,6 @@ def get_pending_approval():
         "location": pending_approval.location,
         "payment_amount": pending_approval.payment_amount,
     }
-
-
-@app.route("/scan_image", methods=["POST"])
-def scan_image():
-    image_file = request.files["image_file"].read()
-    npimg = np.fromstring(image_file, np.uint8)
-    image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    image = np.array(image)
-
-    result = recognize([image])
-
-    return {"licenseplate_number": result}
 
 
 @app.route("/approve", methods=["POST"])

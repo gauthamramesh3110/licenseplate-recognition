@@ -1,1 +1,33 @@
-{% extends 'base.html' %} {% block content %} {% endblock content %}
+{% extends 'base.html' %} {% block content %}
+<div class="container">
+	<div class="card-panel grey lighten-3">
+		<form action="/scan_image" method="POST" enctype="multipart/form-data">
+			<input type="file" name="image_file" id="image_file" /><br />
+			<div class="input-field">
+				<input id="location" type="text" class="validate" name="location" />
+				<label for="location">Location</label>
+			</div>
+			<div class="input-field">
+				<input id="location" type="number" class="validate" name="amount_per_hour" />
+				<label for="location">Amount Per Hour</label>
+			</div>
+			<p>
+				<label>
+					<input class="with-gap" name="type" type="radio" checked value="entry" />
+					<span>Entry</span>
+				</label>
+			</p>
+			<p>
+				<label>
+					<input class="with-gap" name="type" type="radio" value="exit" />
+					<span>Exit</span>
+				</label>
+			</p>
+
+			<button type="submit" class="btn">Submit</button>
+		</form>
+	</div>
+</div>
+{% endblock content %} {%block scripts %}
+<script src="{{ url_for('static', filename='scripts/admin.js') }}"></script>
+{% endblock %}
