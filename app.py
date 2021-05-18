@@ -1,6 +1,8 @@
-from flask import Flask, request
+from flask import Flask, request, render_template, url_for, redirect, make_response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+
+from sqlalchemy.orm import defaultload
 from licenseplate_recognition import recognize
 import cv2
 import numpy as np
@@ -18,6 +20,7 @@ class Entries(db.Model):
     location = db.Column(db.String(30), nullable=False)
     payment_amount = db.Column(db.Integer, default=0)
     payment_approved = db.Column(db.Boolean, default=False)
+    exited = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return "<Entry %r>" % self.licenseplate_number
@@ -33,6 +36,16 @@ class User(db.Model):
 
     def __repr__(self):
         return "<User %r>" % self.username
+
+
+@app.route("/auth")
+def auth():
+    return render_template("auth.html")
+
+
+@app.route("/home")
+def home():
+    return render_template("home.html")
 
 
 @app.route("/addentry", methods=["POST"])
@@ -61,6 +74,7 @@ def add_exit():
     parking_time = existing_entry.exit_time - existing_entry.entry_time
     parking_time = parking_time.total_seconds() // 3600
     existing_entry.payment_amount = parking_time * int(request.json["amount_per_hour"])
+    existing_entry.exited = True
 
     try:
         db.session.commit()
@@ -71,20 +85,19 @@ def add_exit():
 
 @app.route("/registeruser", methods=["POST"])
 def register_user():
-
-    existing_user = User.query.filter_by(username=request.json["username"]).first()
+    existing_user = User.query.filter_by(username=request.form["username"]).first()
     if existing_user != None:
         return {"status": "failure", "message": "Username already exists"}
 
-    existing_licenseplate = User.query.filter_by(licenseplate_number=request.json["licenseplate_number"]).first()
+    existing_licenseplate = User.query.filter_by(licenseplate_number=request.form["licenseplate_number"]).first()
     if existing_licenseplate != None:
         return {"status": "failure", "message": "Licenseplate already associated with a user."}
 
     new_user = User(
-        username=request.json["username"],
-        email=request.json["email"],
-        password=request.json["password"],
-        licenseplate_number=request.json["licenseplate_number"],
+        username=request.form["username"],
+        email=request.form["email"],
+        password=request.form["password"],
+        licenseplate_number=request.form["licenseplate_number"],
     )
     print(new_user)
 
@@ -92,7 +105,12 @@ def register_user():
         db.session.add(new_user)
         db.session.commit()
 
-        return {"status": "success", "message": "Added User"}
+        response = redirect("/home")
+        response.set_cookie("username", new_user.username)
+        response.set_cookie("password", new_user.password)
+        response.set_cookie("loggedin", "true")
+
+        return response
 
     except:
         return {"status": "failure", "message": "Unable to create User"}
@@ -100,13 +118,18 @@ def register_user():
 
 @app.route("/loginuser", methods=["POST"])
 def login_user():
-    user = User.query.filter_by(username=request.json["username"]).first()
+    user = User.query.filter_by(username=request.form["username"]).first()
 
     if user == None:
         return {"status": "failure", "message": "Username is not available"}
     else:
-        if user.password == request.json["password"]:
-            return {"status": "success", "message": "Successfully authenticated"}
+        if user.password == request.form["password"]:
+            response = make_response(redirect("/home"))
+            response.set_cookie("username", user.username)
+            response.set_cookie("password", user.password)
+            response.set_cookie("loggedin", "true")
+
+            return response
         else:
             return {"status": "failure", "message": "Incorrect password"}
 
@@ -114,14 +137,16 @@ def login_user():
 @app.route("/addtowallet", methods=["POST"])
 def add_to_wallet():
     user = User.query.filter_by(username=request.headers["username"], password=request.headers["password"]).first()
-
     if user == None:
         return {"status": "failure", "message": "invalid credentials"}
     else:
+        print("hello")
+        print(request.json["additional_wallet_amount"])
         user.wallet_amount += int(request.json["additional_wallet_amount"])
 
         try:
             db.session.commit()
+            print("added")
             return {"status": "success", "message": "Updated wallet amount", "wallet_amount": user.wallet_amount}
         except:
             return {"status": "failure", "message": "Error updating wallet amount"}
@@ -143,7 +168,7 @@ def get_pending_approval():
     if user == None:
         return {"status": "failure", "message": "invalid credentials"}
 
-    pending_approval = Entries.query.filter_by(licenseplate_number=user.licenseplate_number, payment_approved=False).first()
+    pending_approval = Entries.query.filter_by(licenseplate_number=user.licenseplate_number, payment_approved=False, exited=True).first()
     if pending_approval == None:
         return {"status": "success", "message": "No approval item found."}
 

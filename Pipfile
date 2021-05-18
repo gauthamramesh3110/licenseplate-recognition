@@ -18,7 +18,6 @@ darkflow = {path = "./darkflow"}
 pytesseract = "*"
 flask = "*"
 flask-sqlalchemy = "*"
-tensorflow-gpu = "==1.14"
 
 [dev-packages]
 black = "*"
